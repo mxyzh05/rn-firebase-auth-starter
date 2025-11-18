@@ -1,0 +1,39 @@
+# App Flow Document
+
+## Onboarding and Sign-In/Sign-Up
+When a brand-new user first opens the mobile application built with Expo, they are greeted by a landing screen that automatically routes them to the authentication group if they are not already signed in. This routing is handled by Expo Router, which checks the user’s authentication state through a React Context that listens to Firebase’s `onAuthStateChanged` event. If there is no active session, the user lands on the login screen.
+
+On the login screen, the user is presented with themed input fields for email and password. Here they can either enter their credentials to sign in or tap a clearly labeled link to register a new account. If they choose to register, the app transitions to the registration screen where they fill out a simple form with email, password, and confirmation fields. After entering valid inputs, validated client-side with a library such as Zod or Yup, the user taps the register button. Behind the scenes, a custom `useAuth` hook calls Firebase’s `createUserWithEmailAndPassword` method. When account creation succeeds, the user is automatically logged in and routed to the main application area. If the user has forgotten their password, they tap a “Forgot Password” link which takes them to the password reset screen. There, they submit their email and the app calls Firebase’s `sendPasswordResetEmail`. A confirmation message appears, instructing them to check their email for reset instructions. From any of these screens, the user can navigate back to login using a simple link in the header or footer.
+
+If the user already has an account, they enter their email and password on the login screen. Upon tapping the login button, the app displays a loading animation built with React Native Reanimated. The `useAuth` hook invokes `signInWithEmailAndPassword`. On success, the loading animation completes with haptic feedback, and the app navigates to the protected main area. If the credentials are invalid, the error state is updated and a friendly error message appears below the form fields.
+
+## Main Dashboard or Home Page
+After successful authentication, the user lands in the protected section of the app, which is organized under a `(tabs)` group in the file-based routing structure. The default view is a tab navigator defined in `app/(tabs)/index.tsx`. At the top of the screen, a consistent header displays the app name and a profile icon. Along the bottom, a tab bar shows icons for the Home screen, a Placeholder screen for additional features, and a Settings screen.
+
+The Home tab contains a ThemedView that can later be extended to show real-time data from Firebase Realtime Database or Firestore. In the current starter setup, it displays a welcome message that includes the user’s email, fetched from the global auth context. The Placeholder tab is empty by default but illustrates where additional features, such as a user dashboard or content feed, would go. The Settings tab leads to account and preference controls.
+
+Users switch between these tabs by tapping icons in the bottom tab bar. Navigating from one tab to another uses smooth transitions courtesy of React Native Reanimated, giving a native feel to the cross-platform app.
+
+## Detailed Feature Flows and Page Transitions
+The core feature of this starter is the authentication flow. When creating the login, register, and forgot password screens, each is placed in the `(auth)` group by creating `app/(auth)/login.tsx`, `app/(auth)/register.tsx`, and `app/(auth)/forgot-password.tsx`. Expo Router automatically binds these to the `/login`, `/register`, and `/forgot-password` routes.
+
+On the login screen, the user inputs their credentials and taps the login button. The button press triggers a call to the `useAuth` hook’s `login` function. While awaiting Firebase, a loading spinner animation plays. If the login succeeds, the auth context updates and the navigation stack resets to the `(tabs)` group, preventing the user from returning to the auth screens. If the login fails, the hook captures the error code, maps it to a readable message like “Invalid email or password,” and displays it below the form fields.
+
+On the register screen, the user fills out their email and password. Client-side validation ensures proper formatting. Upon tapping register, the `useAuth` hook calls Firebase to create the new user. A success triggers an automatic redirect to the home tab and a brief celebratory haptic feedback. If the email is already in use, the hook surfaces the relevant message, for example “This email is already registered,” and the user can correct their input.
+
+When the user taps “Forgot Password,” they arrive on a screen where they enter their email. Submitting calls `sendPasswordResetEmail` on the `useAuth` hook. On success, the UI replaces the form with a confirmation text explaining that a reset link has been sent. The user can then tap “Back to Login” to return.
+
+All transitions between these screens are managed by Expo Router’s stack and tab navigation under the hood. Navigating forward pushes a new route onto the stack, while navigating back pops it, providing a familiar, intuitive feel.
+
+## Settings and Account Management
+Within the Settings tab, the user finds options to update their profile and configure preferences. A profile section shows their current email and allows them to add additional fields, such as display name, which would be stored in Firestore under the user’s document. An Edit button toggles the form into an editable state. When changes are saved, the app writes the updates to Firestore and gives haptic feedback upon success.
+
+Below the profile section, a Notifications preferences section allows the user to opt in or out of push notifications. Toggling a switch writes to a user preferences document in Firestore. If a billing or subscription model were added, this screen would also list plan details, offer a link to manage payment methods, and allow cancellations. After saving any setting, the user remains in the Settings tab and can switch back to Home or other tabs at any time.
+
+## Error States and Alternate Paths
+If at any point the user enters invalid data—such as a malformed email or too-short password—client-side validation immediately shows inline error text next to the field. If the app loses network connectivity during a Firebase call, a full-screen overlay with a generic “Connection lost, retry?” message appears. Tapping retry re-attempts the last action, whether it was login, registration, or saving settings.
+
+For restricted actions, such as accessing the main tabs while not authenticated, the router guard in the auth context detects the missing session and automatically redirects the user back to the login screen. Any uncaught errors in asynchronous functions are logged and a fallback error screen can display a “Something went wrong” message with an option to return to Home or restart the app.
+
+## Conclusion and Overall App Journey
+In this starter application, a user first encounters a landing route that checks their authentication state. New users proceed through registration or password reset flows before arriving at the protected main area. Returning users sign in with their credentials, experience smooth animations and haptic feedback, and land directly on the Home tab. From there, they navigate between Home, Placeholder features, and Settings using a bottom tab bar. In Settings they manage their profile, preferences, and potential billing options. Throughout the app, client-side validation, clear error messages, and network-aware overlays ensure users can recover from mistakes or connectivity issues. By following this flow, developers and end users alike gain a coherent, end-to-end understanding of every key page and interaction in the `rn-firebase-auth-starter` application.

@@ -1,5 +1,4 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import Constants from "expo-constants";
 
 // Firebase configuration
@@ -21,5 +20,10 @@ if (getApps().length === 0) {
   app = getApp();
 }
 
-export const auth = getAuth(app);
+// Firebase Authentication is disabled in favor of custom backend authentication
+// Comment out auth initialization to prevent conflicts
+// import { getAuth } from "firebase/auth";
+// export const auth = getAuth(app);
+
+// Export the initialized app for other Firebase services (Firestore, Storage, etc.)
 export default app;
